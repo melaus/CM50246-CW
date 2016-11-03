@@ -1,0 +1,40 @@
+Why does the method work/ not work?
+When does it work/ not work?
+How efficient is the method?
+How does it compare with other methods?
+How could you improve it?
+
+What can go wrong with the methods?
+When are they suitable
+What are the advantages/ disadvantages?
+
+Introduction
+
+
+EM
+
+K-means
+    Algorithm
+        pick k points as starting points
+        for each point, compute means for each point
+        ...
+    Properties
+        Pros & Cons
+
+Gaussian Mixture Model
+    Algorithm
+    Properties
+        Pros & Cons
+
+Results
+(500, 10000)
+Datasets: default * 3, 5 clusters * 3, 20 clusters * 3, 50 clusters * 3
+- default dataset setup - compare output, iterations
+- GMM - kmeans VS random initialisation
+
+Further Work
+- K-means++ utilises probs to init, gives better results, in fact, used by scikit-learn, MatLab - verify this
+
+
+Appendix
+    Using the Code
