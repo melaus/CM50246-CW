@@ -163,7 +163,7 @@ def generate_unsupervised_data(num_dimensions=2, num_clusters=5, num_points=500,
         plt.figure()
         plt.plot(x[0,:], x[1,:], 'kx')
         d.plot()
-        plt.title('Original Data')
+        plt.title('Original Data (d={0}, k={1}, pts={2})'.format(num_dimensions, num_clusters, num_points))
         plt.draw()
 
     return x, d

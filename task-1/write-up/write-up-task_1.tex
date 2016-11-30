@@ -222,28 +222,105 @@ The closed form solutions, the guarantee observations of the constraints on para
 \subsection{Linking $K$-means and GMM} \label{ssec:dis-link}
 The EM framework works very well under $K$-means and GMM. It provides closed form solutions and guarantees convergence for both algorithms. EM aside, one can see that there are striking similarities between the two. The goal for both is to create clusters based on the datapoints, using a very similar set of parameters.
 
-However, there are are a few minor but noticable differences between the algorithms. For instance, $K$-means of hard and soft assignments to clusters in $K$-means and GMM respectively. This means that $K$-means 
+One could suggest that $K$-means is a specific case of GMM, in that the hard assignment and the lack of considerations of covariance makes it bias towards far apart, spherical-based datasets. On the other hand, GMM provides a more flexible solution where each cluster takes into account all datapoints. The bias is $K$-means is solved by the addition of covariance matrices as a parameter in GMM. This enables a tilted, eclipse shape for each cluster.
 
-Based on these similarities and differences, one could suggest that $K$-means is a specific case of GMM, in that the hard assignment and the lack of considerations of covariance makes it bias towards far apart, spherical-based datasets. On the other hand, GMM provides a more flexible solution. The addition of covariance matrices in GMM enables a tilted, eclipse shape.
+However, GMM suffers from dimensionality due to the use of covariance matrices. Given $n$-dimensional datapoints, the covariance matrices becomes $n*n$. For example, a $60*60$ RGB image has a dimensional vector of 10800. This means the covariance becomes $10800 * 10800$, which is rather large and computationally quite heavy. Note that such an image is relatively small in modern standard, so we can see that GMM becomes very complex very quickly as the dimensions of data increases.
+
+$K$-Means suffer a similar problem. As the dimensions increase, the Euclidean distances is inflated as well. We only know that we prefer distances that are smallest and closest to 0, and assign points based on this distance to clusters.
+
+Picking the appropriate value for the number of clusters ($k$) is also an issue. It is a ambiguous problem where there is no principled statistcal method available to decide for an optimal $k$. However, the elbow method, average silhouette method and gap statistics are a few strategies to help find a better informed approximate. The general idea is to run $K$-means with different number of centroids, and then evalute outcome (the within-cluster sum of sqaure, for example) to find a close approximate. The alternative is to use other clustering alogirhtms such as DBSCAN that do not require a predefined number-of-cluster value.
+
+% TODO: if there's time
+% In terms of clustering together non-flat geometry and uneven cluster sizes, DBSCAN offers a great algorithm to locate clusters through analysing the underlying density of data. It 
+
+In \autoref{sec:results}, we will look at the impact of an increased number clusters and dimensions of the datapoints in terms of number of iterations required to reach a convergence.
 
 \subsection{Initialisation} \label{ssec:dis-init}
-One important problem to consider is when to is how to initialise either of the methods
+One important problem to consider is how to initialise either of the algorithms. My initialisation for $K$-means is simply a uniformly random select of the given number of required clusters, $c_{1...k}$.  However, $K$-means++ \cite{kmeans-pp} introduces a better way to initialise the process, which should be pursued in the future. 
+My random initialisation for $K$-means is simply a uniformly random select of the given number of required clusters, $c_{1...k}$.
 
-\subsection{}
+Initially, point $c_1$ is picked uniformly at random from the data as the first centroid. Then, iteratively, pick the next centroid, $c_k$, from the data with probability $\frac{D(x')^2}{\sum_{i} D(x_i)^2}$ with $D$ being the D-weighting function. The initialisation method aims to find starting points from different clusters from the start, so fewer iterations are required to find the solution.
 
+For GMM, there are two common initialisation strategies - uniformly at random and using $K$-means as a staring point. This implementation contains both of these initialisation methods. Using the $K$-means results as the starting means for GMM enable have a rough idea where these clusters may actually be. On the other hand, a random initiation, suffers the same issue as $K$-means has faced, in that these starting points may be very far out to where exactly these centres should be, which entails extra time or very unreasonable results. 
+
+My implementation of a random initialisation works as follow: a random sample of $\frac{\text{total number of points}}{\text{number of clusters}}$ is picked for each supposed cluster. 
+
+% TODO: how to pick k
+% There is also the problem of choosing an appropriate number of clusters, $k$. In fact, it is an ambiguous problem
+
+We shall see how these strategies compare with each other in \autoref{sec:results}.
 
 
 %%%%%%%%%%%%%
-\section{Results}
+\section{Results} \label{sec:results}
 %%%%%%%%%%%%%
-% TODO
-% dimensionality
 % scalability
 % gmm - init random VS init with K-means
 
-\section{Future Work}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{screen-ori-data}
+    \caption{The diagram shows the three datasets being used to test the algorithms.}
+  \label{fig:screen-ori-data}
+\end{figure} 
 
-\section{Python Scripts Documentation}
+Three sets of data of varying number of clusters and datapoints are used to look at the strength and weaknesses of $K$-Means and GMM. The following shows the some numeric details about these datasets:
+\begin{itemize}
+    \item \textbf{pts\_0}: Dimension of datapoints: 2, number of clusters: 2, number of datapoints: 500
+    \item \textbf{pts\_1}: Dimension of datapoints: 2, number of clusters: 5, number of datapoints: 500
+    \item \textbf{pts\_2}: Dimension of datapoints: 2, number of clusters: 10, number of datapoints: 1000
+\end{itemize}
+
+\subsection{$K$-Means} \label{sec:results-km}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{screen-km-2-2-500}
+    \caption{The diagram shows K-means running on pts\_0, with the original data on the left. Terminated in 3 iterations.}
+  \label{fig:screen-ori-data}
+\end{figure} 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{screen-km-2-5-500}
+    \caption{The diagram shows K-means running on pts\_1, with the original data on the left. Terminated in 8 iterations.}
+  \label{fig:screen-screen-km-2-5-500}
+\end{figure} 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{screen-km-2-10-5000}
+    \caption{The diagram shows K-means running on pts\_2, with the original data on the left. Terminated in 34 iterations.}
+  \label{fig:screen-km-2-10-5000}
+\end{figure} 
+
+In the diagrams above, the limitation of K-means can be seen as the dataset becomes more complex and closer packed together. $K$-means got confused especially when the clusters are very closed together, as seen in \autoref{fig:screen-km-2-10-5000}. 
+
+Here, it also illustrates the importance of initialisation. Our random initialisation caused some unexpected clustering to happen, forming multiple groups at where we would expect to be one big cluster. The results of $K$-means varies vastly especially when using a random initialisation. Implementing a strategy such as $K$-Means++ should provide more consistent results with better clustering.
+
+On the other hand, given our datasets, K-means seems to be rather scalable, as all three tests ran in an expected increase in the number of iterations, and computed within a reasonable time.
+
+\subsection{GMM} \label{ssec:results-GMM}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{screen-gmm-2-2-500}
+    \caption{This diagram shows a noticable lower number iterations required to perfrom GMM fitting with a K-means initialisation, as opposed to a random initialisation. (left) Terminated in 26 GMM iterations. (right) Terminated in 4 K-Means interations and 21 GMM iterations.}
+  \label{fig:screen-gmm-2-2-500}
+\end{figure} 
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1\textwidth]{screen-gmm-2-5-500}
+    \caption{This diagram shows a more complex GMM fitting. (left) 267 GMM iterations, (right) 7 K-means and 114 GMM iterations}
+  \label{fig:screen-gmm-2-5-500}
+\end{figure} 
+
+The gain of using covariance as a parameter allows more flexible eclipse shapes in the datasets, but also impacted in the time and computation required. GMM took considerably more iterations and time to converge than K-Means. Also, the computational power required increased much more rapidly as the dataset gets bigger and more complex.
+
+On the other hand, K-means initialisation vastly improves the GMM algorithm. As seen in \autoref{fig:screen-gmm-2-5-500}, many fewer expensive GMM iterations are required, and more closely resembles the original data.
+
+\textit{See the jupyter notebook file (plots.ipynbk) for the original plots. The scripts, kmeans.py and gmm.py can both be run on their own with command line arguments. See the 'argparse' section in the code to see the available parameters.}
+
 
 \printbibliography
 

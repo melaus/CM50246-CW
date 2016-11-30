@@ -32,9 +32,8 @@ def kmeans(data, centroids):
     count = 1
 
     while True:
-        print 'iteration', count
+        # print 'iteration', count
         new_cen_list = []
-        # distances between centroids and points (array(pt), array(centroid_x, centroid_y), euclidean_dis)
         distances = [[[pt, cen, sqrt((cen[0]-pt[0])**2 + (cen[1]-pt[1])**2)] for cen in cur_cen_list] for pt in data]
 
         # ######
@@ -46,7 +45,7 @@ def kmeans(data, centroids):
 
         # calculate new centroids based on points around current centroids
         for cen in cur_cen_list:
-            print cen
+            # print cen
             assert type(cen) == np.ndarray
             cen_pts_list = filter(lambda info: np.array_equal(info[1], cen), pts_min_dis)
             cen_x = map(lambda item: item[0][0], cen_pts_list)
@@ -58,6 +57,7 @@ def kmeans(data, centroids):
 
         if (np.sort(cur_cen_list, axis=0) == np.sort(new_cen_list, axis=0)).all():
             # end loop when the centroids don't change anymore - return transposed version for easy plotting
+            print 'iterations: {0}'.format(count)
             return np.array(map(lambda info: info[0], pts_min_dis)).T, new_cen_list.T
         else:
             # assign new list as the current list
@@ -65,11 +65,11 @@ def kmeans(data, centroids):
         count += 1
 
 
-def plot_outcome(data, centroids):
+def plot_outcome(data, centroids, title='New Centroids'):
     plt.figure(2)
     plt.plot(data[0, :], data[1, :], 'kx')
-    plt.plot(centroids[0, :], centroids[1, :], 'rx')
-    plt.title('New Centroids')
+    plt.plot(centroids[0, :], centroids[1, :], 'rx', mew=5, ms=10)
+    plt.title(title)
     plt.show()
 
 

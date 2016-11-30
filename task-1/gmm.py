@@ -9,29 +9,19 @@ import matplotlib.pyplot as plt
 from kmeans import kmeans
 
 
-def initialise_parameters(args, pts):
-    print 'initialising parameters...'
-
-    if args.kmeans:
-        1 == 1
-    else:
-        1 == 1
-
-    samples = [np.array(sample(pts, args.p / args.k)).T for k in range(args.k)]
-    weights = np.array([1.0/args.k for k in range(args.k)])
-    means = np.array(sample(pts, args.k))
-    if args.kmeans:
-        print 'using kmeans as initialisation:'
+def initialise_parameters(args_p, args_c, args_kmeans, pts):
+    # print 'initialising parameters...'
+    samples = [np.array(sample(pts, args_p / args_c)).T for k in range(args_c)]
+    weights = np.array([1.0/args_c for k in range(args_c)])
+    means = np.array(sample(pts, args_c))
+    if args_kmeans:
         _, means = kmeans(pts, means)
         means = means.T
-        print 'new means:\n{0}'.format(means)
-        covars = np.array([np.cov(group_k) for group_k in samples])
-    else:
-        covars = np.array([np.cov(group_k) for group_k in samples])
+    covars = np.array([np.cov(group_k) for group_k in samples])
 
-    print weights
-    print means
-    print covars
+    # print weights
+    # print means
+    # print covars
 
     return weights, means, covars
 
@@ -53,7 +43,6 @@ def log_likelihood(dim, all_reps, weights, means, covars):
     """
     Calculate the log likelihood of the GMM
     :param: dim: int. Dimensions of a datapoint
-    :param k: int. Number of clusters
     :param all_reps: list of pairs in the form (pt, [responsibilities for all groups]).
     :return:
     """
@@ -65,13 +54,13 @@ def log_likelihood(dim, all_reps, weights, means, covars):
         ]
         for (pt, reps) in all_reps]
 
-    print np.sum(np.log([sum(cluster) for cluster in weighted]))
+    # print np.sum(np.log([sum(cluster) for cluster in weighted]))
 
     likelihood = np.sum(np.log([sum(cluster) for cluster in weighted]))
     return likelihood
 
 
-def gmm(dim, k, pts, weights, means, covars):
+def gmm(dim, pts, weights, means, covars, title):
     """
     Fitting GMM using EM
     :param dim: int. Dimension of datapoints
@@ -82,39 +71,41 @@ def gmm(dim, k, pts, weights, means, covars):
     :param covars: np.array. A list of (2,2) covars
     :return:
     """
-    print '==================== GMM start ===================='
+    # print '==================== GMM start ===================='
 
     # initial parameter assignments
     cur_weights, cur_means, cur_covars = weights, means, covars
     cur_log_likelihood = 0
 
     i = 1
-    while True:
-        print '\n\n---------- Iteration {0} ----------'.format(i)
-        all_reps, max_reps = e_step(pts, dim, cur_weights, cur_means, cur_covars)
-        new_weights, new_means, new_covars = m_step(all_reps)
+    try:
+        while True:
+            # print '\n\n---------- Iteration {0} ----------'.format(i)
+            all_reps, max_reps = e_step(pts, dim, cur_weights, cur_means, cur_covars)
+            new_weights, new_means, new_covars = m_step(all_reps)
 
-        new_log_likelihood = log_likelihood(dim, all_reps, new_weights, new_means, new_covars)
-        print 'log_likelihood:', new_log_likelihood
+            new_log_likelihood = log_likelihood(dim, all_reps, new_weights, new_means, new_covars)
+            # print 'log_likelihood:', new_log_likelihood
+            #
+            # print 'cur_means:'
+            # print cur_means
+            # print ''
+            # print 'new_means:'
+            # print new_means
 
-        print 'cur_means:'
-        print cur_means
-        print ''
-        print 'new_means:'
-        print new_means
-
-        # TODO: change this!!!!!
-        if (cur_means == new_means).all() or new_log_likelihood == cur_log_likelihood or i == 1000:
-            print 'new_log_likelihood == cur_log_likelihood'
-            plot_outcome(pts.T, new_means.T, new_covars)
-            return
-        else:
-            cur_weights, cur_means, cur_covars = new_weights, new_means, new_covars
-            cur_log_likelihood = new_log_likelihood
-            plt.figure(2)
-            plot_covar_ellipse(cur_means.T, cur_covars, 'b', alpha=0.3)
-        i += 1
-        print '------------------------------------'
+            if (cur_means == new_means).all() or new_log_likelihood == cur_log_likelihood or i == 10000:
+                # print 'new_log_likelihood == cur_log_likelihood'
+                plot_outcome(pts.T, new_means.T, new_covars, title)
+                print 'iterations: {0}'.format(i)
+                return
+            else:
+                cur_weights, cur_means, cur_covars = new_weights, new_means, new_covars
+                cur_log_likelihood = new_log_likelihood
+                plt.figure(2)
+                plot_covar_ellipse(cur_means.T, cur_covars, 'b', alpha=0.3)
+            i += 1
+    except:
+        print 'killed/ broke at iteration {0}'.format(i)
 
 
 def e_step(pts, dim, weights, means, covars):
@@ -127,7 +118,7 @@ def e_step(pts, dim, weights, means, covars):
     :param covars:
     :return:
     """
-    print 'in e_step...'
+    # print 'in e_step...'
     # iterate through all points
     max_reps = []
     all_reps = []
@@ -145,13 +136,12 @@ def e_step(pts, dim, weights, means, covars):
 
 def m_step(all_r_k):
     """
-    :param num_k: int. Number of clusters
     :param all_r_k: list. (pt, responsibilities)
     """
     sum_all_r_k = sum(map(lambda info: info[1], all_r_k))
     new_weights = sum_all_r_k / np.sum(sum_all_r_k)
     new_means = sum(np.array([[ r_info[0] * r_k for r_k in r_info[1] ] for r_info in all_r_k])) / sum_all_r_k[:, None]
-    print 'new_means:\n{0}'.format(new_means)
+    # print 'new_means:\n{0}'.format(new_means)
 
     new_covars_raw = np.array([
                                [
@@ -160,20 +150,20 @@ def m_step(all_r_k):
                                ]
                                for r_info in all_r_k])
 
-    print 'new_covars_raw.shape: {0}'.format(new_covars_raw.shape)
+    # print 'new_covars_raw.shape: {0}'.format(new_covars_raw.shape)
 
     new_covars = np.array([c / sum_r for c, sum_r in izip(sum(new_covars_raw), sum_all_r_k)])
-    print 'new_covars:\n{0}'.format(new_covars)
+    # print 'new_covars:\n{0}'.format(new_covars)
 
     return new_weights, new_means, new_covars
 
 
-def plot_outcome(data, means, covars):
+def plot_outcome(data, means, covars, title):
     plt.figure(2)
     plt.plot(data[0, :], data[1, :], 'kx')
     # plt.plot(centroids[0, :], centroids[1, :], 'rx')
     plot_covar_ellipse(means, covars, 'r')
-    plt.title('GMM')
+    plt.title(title)
 
 
 def main():
@@ -185,10 +175,10 @@ def main():
                                                 num_points=args.p,
                                                 plot_data=True)
 
-    weights, means, covars = initialise_parameters(args, pts.T)
+    weights, means, covars = initialise_parameters(args.p, args.c, args.kmeans, pts.T)
+    # weights, means, covars = initialise_parameters(args, pts.T)
 
-    # TODO: enable
-    gmm(args.d, args.k, pts.T, weights, means, covars)
+    gmm(args.d, pts.T, weights, means, covars, args.t)
     plt.show()
 
 
@@ -200,9 +190,10 @@ def get_args():
     parser = argparse.ArgumentParser(description='GMM')
     parser.add_argument('--d', '-num_dimensions', type=int, default=2, help='the number of dimensions in generated data')
     parser.add_argument('--k', '-num_clusters', type=int, default=5, help='the number of clusters')
-    # parser.add_argument('--c', '-num_centroids', type=int, default=5, help='the number of clusters')
+    parser.add_argument('--c', '-num_centroids', type=int, default=5, help='the number of clusters')
     parser.add_argument('--p', '-num_points', type=int, default=500, help='the number of clusters in generated data')
     parser.add_argument('--kmeans', '-kmeans', action='store_true', default=False, help='initialise with k-means')
+    parser.add_argument('--t', '-title', type=str, default='GMM', help='title of plot')
 
     return parser.parse_args()
 
